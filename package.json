@@ -12,8 +12,9 @@
     "build": "turbo run build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
-    "dev:web": "npm run dev --workspace=@sketchstrike/web",
-    "dev:server": "npm run dev --workspace=@sketchstrike/server"
+    "dev:web": "npm run build --workspace=@sketchstrike/shared && npm run dev --workspace=@sketchstrike/web",
+    "dev:server": "npm run build --workspace=@sketchstrike/shared && npm run dev --workspace=@sketchstrike/server",
+    "start:server": "npm run build --workspace=@sketchstrike/shared && npm run build --workspace=@sketchstrike/server && npm run start --workspace=@sketchstrike/server"
   },
   "devDependencies": {
     "turbo": "^2.3.0",

@@ -60,6 +60,36 @@ npm run dev:web
 
 Then open <http://localhost:3000>, create a room, share the 5-character code, and have a second browser/tab join.
 
+## Deployment notes
+
+Deploy the Next.js frontend to Vercel if you like, but run `apps/server` on an always-on Node host that supports persistent WebSocket connections, such as Railway, Render, Fly.io, a VPS, or a container service. Vercel Functions cannot act as the Socket.IO server for this app because rooms, timers, reconnect windows, and drawing events live in server memory over a long-lived connection.
+
+Set the production frontend environment variable to the deployed server URL:
+
+```bash
+NEXT_PUBLIC_SERVER_URL=https://your-always-on-node-server.example.com
+```
+
+Set the server CORS origin to the deployed frontend domain. Multiple domains can be comma-separated, which is useful for a production Vercel domain plus a custom domain:
+
+```bash
+CORS_ORIGIN=https://sketch-strike-web.vercel.app,https://your-custom-domain.com
+```
+
+For Render, use the repository root as the service root when possible:
+
+```bash
+Build Command: npm install; npm run build
+Start Command: npm run start --workspace=@sketchstrike/server
+```
+
+If the Render service root is set to `apps/server`, use:
+
+```bash
+Build Command: npm install; npm run build --workspace=@sketchstrike/shared; npm run build
+Start Command: npm run start
+```
+
 ## How the game works
 
 1. **Lobby** — host configures mode, rounds, round timer, **guesses per round**, hints.

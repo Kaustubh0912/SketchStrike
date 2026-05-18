@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "dev:server": "npm run start",
+    "build": "npm run build --workspace=@sketchstrike/shared && tsc",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "lint": "echo 'lint placeholder'"
