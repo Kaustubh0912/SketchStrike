@@ -10,6 +10,7 @@ export interface RoomSettings {
   hintsEnabled: boolean;
   isPublic: boolean;
   gameMode: GameMode;
+  customWords: string[];
 }
 
 export interface PublicPlayer {

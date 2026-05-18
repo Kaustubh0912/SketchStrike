@@ -13,7 +13,7 @@ import {
   type ServerToClientEvents,
 } from '@sketchstrike/shared';
 import { newMessageId, newPlayerId, newRoomCode, newToken } from '../utils/id.js';
-import { sanitizeChat } from '../utils/normalize.js';
+import { sanitizeChat, sanitizeCustomWords } from '../utils/normalize.js';
 import { GameLoop } from './GameLoop.js';
 
 export interface InternalPlayer {
@@ -308,6 +308,7 @@ export class RoomManager {
       hintsEnabled: !!s.hintsEnabled,
       isPublic: !!s.isPublic,
       gameMode: s.gameMode === 'classic' ? 'classic' : 'strike',
+      customWords: sanitizeCustomWords(s.customWords),
     };
   }
 }

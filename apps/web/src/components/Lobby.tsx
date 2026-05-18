@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { LIMITS, type RoomSettings } from '@sketchstrike/shared';
@@ -193,6 +193,12 @@ export default function Lobby() {
               disabled={!isHost}
               onChange={(v) => update('hintsEnabled', v)}
             />
+
+            <CustomWordsField
+              value={room.settings.customWords}
+              disabled={!isHost}
+              onChange={(words) => update('customWords', words)}
+            />
           </div>
         </Card>
       </div>
@@ -294,6 +300,90 @@ function Slider({
         disabled={disabled}
         onChange={(e) => onChange(Number(e.target.value))}
       />
+    </div>
+  );
+}
+
+function CustomWordsField({
+  value,
+  disabled,
+  onChange,
+}: {
+  value: string[];
+  disabled: boolean;
+  onChange: (words: string[]) => void;
+}) {
+  const [local, setLocal] = useState(() => value.join(', '));
+  const [focused, setFocused] = useState(false);
+  // Track the last value we emitted so we can detect server-normalized echoes
+  // and only resync the textarea when the server's view actually changed.
+  const lastEmittedRef = useRef(value.join(', '));
+
+  useEffect(() => {
+    if (focused) return;
+    const incoming = value.join(', ');
+    if (incoming === lastEmittedRef.current) return;
+    setLocal(incoming);
+    lastEmittedRef.current = incoming;
+  }, [value, focused]);
+
+  const parsed = useMemo(
+    () =>
+      local
+        .split(/[,\n]/)
+        .map((s) => s.trim())
+        .filter(Boolean),
+    [local],
+  );
+
+  function commit() {
+    const normalized = parsed.join(', ');
+    if (normalized === lastEmittedRef.current) return;
+    lastEmittedRef.current = normalized;
+    onChange(parsed);
+  }
+
+  const usingCustom = value.length >= LIMITS.minCustomWords;
+  const overLimit = parsed.length > LIMITS.maxCustomWords;
+  const tooFew = parsed.length > 0 && parsed.length < LIMITS.minCustomWords;
+
+  return (
+    <div className={disabled && value.length === 0 ? 'opacity-60' : ''}>
+      <div className="flex items-center justify-between mb-1.5">
+        <CardLabel className="!text-[var(--ink-soft)]">Custom words</CardLabel>
+        <Badge tone={usingCustom ? 'success' : 'ink'} size="sm">
+          {parsed.length} {parsed.length === 1 ? 'word' : 'words'}
+        </Badge>
+      </div>
+      <textarea
+        value={local}
+        disabled={disabled}
+        onChange={(e) => setLocal(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => {
+          setFocused(false);
+          commit();
+        }}
+        placeholder="pizza, ramen, taco, sushi, donut…"
+        rows={3}
+        spellCheck={false}
+        className="bx-sm w-full px-3 py-2 min-h-[88px] bg-[var(--paper)] text-[var(--ink)] font-medium placeholder:text-[var(--muted)] placeholder:font-medium focus:outline-none focus-visible:outline-3 focus-visible:outline-[var(--ring)] resize-y"
+      />
+      <p className="mt-1.5 text-xs text-[var(--muted)] font-semibold">
+        {overLimit ? (
+          <span className="text-[var(--danger)]">
+            Max {LIMITS.maxCustomWords} words — extras will be dropped.
+          </span>
+        ) : tooFew ? (
+          <span>
+            Add {LIMITS.minCustomWords - parsed.length} more to use these instead of the default bank.
+          </span>
+        ) : usingCustom ? (
+          <span className="text-[var(--success)]">Using your custom bank.</span>
+        ) : (
+          <span>Comma-separated. Leave empty for the default word bank.</span>
+        )}
+      </p>
     </div>
   );
 }

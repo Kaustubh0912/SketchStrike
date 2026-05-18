@@ -32,18 +32,28 @@ const WORDS: Record<Category, string[]> = {
 
 const ALL_WORDS = Object.values(WORDS).flat();
 
-export function pickWordChoices(count: number, exclude: Set<string> = new Set()): string[] {
-  const pool = ALL_WORDS.filter((w) => !exclude.has(w));
+export interface PickWordOptions {
+  customPool?: string[];
+  exclude?: Set<string>;
+}
+
+export function pickWordChoices(count: number, options: PickWordOptions = {}): string[] {
+  const customPool = options.customPool ?? [];
+  // Use the host's bank only when it has enough words to cover the choice count.
+  // With fewer than `count` words we fall back to the default bank rather than
+  // returning a short list (the drawer would have nothing to pick from).
+  const useCustom = customPool.length >= count;
+  const sourcePool = useCustom ? customPool : ALL_WORDS;
+  const exclude = options.exclude ?? new Set<string>();
+
+  let pool = sourcePool.filter((w) => !exclude.has(w));
+  if (pool.length < count) pool = [...sourcePool];
+
   const choices: string[] = [];
-  const seen = new Set<string>();
   while (choices.length < count && pool.length > 0) {
     const idx = Math.floor(Math.random() * pool.length);
-    const word = pool[idx];
-    if (word && !seen.has(word)) {
-      choices.push(word);
-      seen.add(word);
-    }
-    pool.splice(idx, 1);
+    const [picked] = pool.splice(idx, 1);
+    if (picked) choices.push(picked);
   }
   return choices;
 }

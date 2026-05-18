@@ -10,7 +10,7 @@ import { judgeGuess } from '../game/GuessValidator.js';
 import type { Room, RoomManager } from '../game/RoomManager.js';
 import { scoreGuesser } from '../game/Scoring.js';
 import { newMessageId as newGuessMessageId } from '../utils/id.js';
-import { sanitizeChat } from '../utils/normalize.js';
+import { sanitizeChat, sanitizeCustomWords } from '../utils/normalize.js';
 
 type IoServer = Server<ClientToServerEvents, ServerToClientEvents>;
 type IoSocket = Socket<ClientToServerEvents, ServerToClientEvents>;
@@ -255,6 +255,7 @@ function applySettings(current: RoomSettings, incoming: Partial<RoomSettings>): 
     hintsEnabled: !!merged.hintsEnabled,
     isPublic: !!merged.isPublic,
     gameMode: merged.gameMode === 'classic' ? 'classic' : 'strike',
+    customWords: sanitizeCustomWords(merged.customWords),
   };
 }
 

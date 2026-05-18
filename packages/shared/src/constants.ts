@@ -8,6 +8,7 @@ export const DEFAULT_SETTINGS: RoomSettings = {
   hintsEnabled: true,
   isPublic: false,
   gameMode: 'strike',
+  customWords: [],
 };
 
 export const LIMITS = {
@@ -24,6 +25,12 @@ export const LIMITS = {
   wordChoiceSeconds: 15,
   guessCooldownMs: 600,
   reconnectGraceMs: 30_000,
+  // Custom words bank (host-defined). When the bank has at least
+  // `minCustomWords` entries, drawer choices come ONLY from this bank;
+  // otherwise the server falls back to the built-in word categories.
+  minCustomWords: 3,
+  maxCustomWords: 200,
+  maxCustomWordLength: 40,
 } as const;
 
 export const AVATAR_COLORS = [

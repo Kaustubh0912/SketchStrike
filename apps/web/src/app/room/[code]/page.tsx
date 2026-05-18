@@ -105,7 +105,10 @@ export default function RoomPage() {
 
   if (!room) return null;
 
-  if (gameOver) return <Results />;
+  // Only show Results while the server says the game is actually over.
+  // After a rematch the status transitions back to 'choosing'/'playing',
+  // so we should fall through to GameScreen even if stale gameOver data lingers.
+  if (gameOver && room.status === 'ended') return <Results />;
   if (room.status === 'lobby') return <Lobby />;
   return <GameScreen />;
 }

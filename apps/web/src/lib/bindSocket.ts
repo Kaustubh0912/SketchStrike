@@ -18,6 +18,12 @@ export function useSocketBindings() {
     if (socket.connected) onConnect();
 
     socket.on('room_updated', (state) => {
+      // Clear stale game-over data once the server says we've left the 'ended'
+      // status (i.e. on a rematch). Otherwise the Results screen would keep
+      // rendering even after the next game starts.
+      if (state.status !== 'ended' && store.getState().gameOver) {
+        store.getState().setGameOver(null);
+      }
       store.getState().setRoom(state);
     });
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   applyMode,
@@ -14,15 +15,24 @@ import {
   type ModeName,
   type ThemeName,
 } from '@/lib/theme';
+import { useGameStore } from '@/store/gameStore';
+import { getSocket } from '@/lib/socket';
+import { clearSession } from '@/lib/session';
 import Icon from './Icon';
 import { CardLabel } from './ui/Card';
 
 export default function Settings() {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [theme, setThemeState] = useState<ThemeName | null>(null);
   const [mode, setModeState] = useState<ModeName | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  // Show the leave button only when there's an active room session.
+  const playerId = useGameStore((s) => s.playerId);
+  const reset = useGameStore((s) => s.reset);
+  const inRoom = playerId !== null;
 
   useEffect(() => {
     setThemeState(loadTheme());
@@ -60,17 +70,40 @@ export default function Settings() {
     applyMode(name);
   }
 
+  function leaveRoom() {
+    setOpen(false);
+    const socket = getSocket();
+    socket.emit('leave_room');
+    clearSession();
+    reset();
+    router.replace('/');
+  }
+
   return (
     <>
-      <button
-        ref={buttonRef}
-        onClick={() => setOpen((v) => !v)}
-        aria-label="Settings"
-        aria-expanded={open}
-        className="fixed bottom-4 right-4 z-40 bx-sm bx-press w-12 h-12 grid place-items-center bg-[var(--paper)] text-[var(--ink)]"
-      >
-        <Icon name="gear" className="text-lg" />
-      </button>
+      <div className="fixed bottom-4 right-4 z-40 flex items-center gap-2">
+        {inRoom && (
+          <button
+            type="button"
+            onClick={leaveRoom}
+            aria-label="Leave room"
+            title="Leave room"
+            className="bx-sm bx-press w-12 h-12 grid place-items-center bg-[var(--danger)] text-[var(--danger-fg)]"
+          >
+            <Icon name="leave" className="text-lg" />
+          </button>
+        )}
+        <button
+          ref={buttonRef}
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-label="Settings"
+          aria-expanded={open}
+          className="bx-sm bx-press w-12 h-12 grid place-items-center bg-[var(--paper)] text-[var(--ink)]"
+        >
+          <Icon name="gear" className="text-lg" />
+        </button>
+      </div>
 
       <AnimatePresence>
         {open && (
@@ -141,6 +174,20 @@ export default function Settings() {
                 label="Dark"
               />
             </div>
+
+            {inRoom && (
+              <>
+                <div className="my-4 border-t-[3px] border-[var(--ink)]" />
+                <button
+                  type="button"
+                  onClick={leaveRoom}
+                  className="bx-sm bx-press w-full min-h-[44px] flex items-center justify-center gap-2 font-bold text-sm bg-[var(--danger)] text-[var(--danger-fg)]"
+                >
+                  <Icon name="leave" />
+                  Leave room
+                </button>
+              </>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

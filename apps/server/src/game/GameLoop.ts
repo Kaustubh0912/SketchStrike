@@ -85,8 +85,10 @@ export class GameLoop {
     this.room.drawersUsedThisRound.add(nextDrawerId);
     this.room.status = 'choosing';
 
-    const exclude = new Set(this.room.recentWords);
-    this.wordChoices = pickWordChoices(3, exclude);
+    this.wordChoices = pickWordChoices(3, {
+      exclude: new Set(this.room.recentWords),
+      customPool: this.room.settings.customWords,
+    });
     this.wordChoiceFor = nextDrawerId;
 
     const drawer = this.room.players.get(nextDrawerId);
