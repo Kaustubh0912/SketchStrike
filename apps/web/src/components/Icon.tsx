@@ -1,0 +1,97 @@
+'use client';
+
+import { FontAwesomeIcon, type FontAwesomeIconProps } from '@fortawesome/react-fontawesome';
+import {
+  faPencil,
+  faPenNib,
+  faRocket,
+  faBullseye,
+  faPalette,
+  faStopwatch,
+  faMobileScreen,
+  faCopy,
+  faShareNodes,
+  faHourglassHalf,
+  faPlay,
+  faTriangleExclamation,
+  faLock,
+  faBolt,
+  faLeaf,
+  faFireFlameCurved,
+  faRotateLeft,
+  faTrash,
+  faEraser,
+  faCheck,
+  faXmark,
+  faFire,
+  faEye,
+  faTrophy,
+  faRotate,
+  faHouse,
+  faPaperPlane,
+  faGear,
+  faSun,
+  faMoon,
+  faMedal,
+  faCircleInfo,
+  faPaintbrush,
+  faUserGroup,
+  faClock,
+  faStar,
+  faUserSlash,
+  faArrowRightFromBracket,
+  faDoorOpen,
+  type IconDefinition,
+} from '@fortawesome/free-solid-svg-icons';
+
+const REGISTRY = {
+  pencil: faPencil,
+  penNib: faPenNib,
+  rocket: faRocket,
+  bullseye: faBullseye,
+  palette: faPalette,
+  stopwatch: faStopwatch,
+  mobile: faMobileScreen,
+  copy: faCopy,
+  share: faShareNodes,
+  hourglass: faHourglassHalf,
+  play: faPlay,
+  warning: faTriangleExclamation,
+  lock: faLock,
+  bolt: faBolt,
+  leaf: faLeaf,
+  flame: faFireFlameCurved,
+  undo: faRotateLeft,
+  trash: faTrash,
+  eraser: faEraser,
+  check: faCheck,
+  xmark: faXmark,
+  fire: faFire,
+  eye: faEye,
+  trophy: faTrophy,
+  rotate: faRotate,
+  house: faHouse,
+  send: faPaperPlane,
+  gear: faGear,
+  sun: faSun,
+  moon: faMoon,
+  medal: faMedal,
+  info: faCircleInfo,
+  brush: faPaintbrush,
+  users: faUserGroup,
+  clock: faClock,
+  star: faStar,
+  kick: faUserSlash,
+  leave: faArrowRightFromBracket,
+  doorOpen: faDoorOpen,
+} satisfies Record<string, IconDefinition>;
+
+export type IconName = keyof typeof REGISTRY;
+
+interface Props extends Omit<FontAwesomeIconProps, 'icon'> {
+  name: IconName;
+}
+
+export default function Icon({ name, ...rest }: Props) {
+  return <FontAwesomeIcon icon={REGISTRY[name]} {...rest} />;
+}

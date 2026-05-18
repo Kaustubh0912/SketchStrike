@@ -1,0 +1,368 @@
+@import "tailwindcss";
+
+/* ---------- Neobrutalism design tokens ----------
+   Two dimensions: data-theme (loud/sharp/cozy) and data-mode (light/dark).
+   The light defaults live in :root and [data-theme=...] selectors;
+   [data-mode='dark'] overrides shift bg/paper/ink and adjust accents
+   so neobrutalism's dark variants stay punchy.
+------------------------------------------------- */
+
+:root {
+  /* shared tokens */
+  --radius: 14px;
+  --radius-sm: 10px;
+  --border-w: 3px;
+  --shadow-x: 5px;
+  --shadow-y: 5px;
+  --shadow-x-sm: 3px;
+  --shadow-y-sm: 3px;
+  --shadow-x-lg: 8px;
+  --shadow-y-lg: 8px;
+}
+
+/* ---------- LOUD (default) ---------- */
+
+:root,
+html[data-theme='loud'] {
+  --bg: #fef6e4;
+  --bg-tile: #fffaef;
+  --ink: #001858;
+  --ink-soft: #1f2961;
+  --muted: #4b4f6a;             /* darker for AA body text */
+  --paper: #ffffff;
+  --primary: #f582ae;
+  --primary-fg: #001858;        /* navy on pink — 6.8:1 */
+  --accent: #ffd803;
+  --accent-fg: #001858;
+  --secondary: #8bd3dd;
+  --secondary-fg: #001858;
+  --danger: #c61a4d;            /* deepened — white on this 5.8:1 */
+  --danger-fg: #ffffff;
+  --success: #0a7e51;           /* deepened — white on this 5.0:1 */
+  --success-fg: #ffffff;
+  --shadow-color: #001858;
+  --ring: #d83b75;              /* darker pink for visible focus ring on light bg */
+}
+
+html[data-theme='loud'][data-mode='dark'] {
+  --bg: #18103d;
+  --bg-tile: #221758;
+  --ink: #fef6e4;
+  --ink-soft: #d8d4f5;
+  --muted: #8d8ab8;
+  --paper: #2a1f6a;
+  --primary: #f582ae;
+  --primary-fg: #18103d;
+  --accent: #ffd803;
+  --accent-fg: #18103d;
+  --secondary: #8bd3dd;
+  --secondary-fg: #18103d;
+  --danger: #ff6b8a;
+  --danger-fg: #18103d;
+  --success: #5be8a8;
+  --success-fg: #18103d;
+  --shadow-color: #000000;
+  --ring: #ffd803;
+}
+
+/* ---------- SHARP ---------- */
+
+html[data-theme='sharp'] {
+  --bg: #f5f5f5;
+  --bg-tile: #ffffff;
+  --ink: #0a0a0a;
+  --ink-soft: #262626;
+  --muted: #525252;
+  --paper: #ffffff;
+  --primary: #d4002e;            /* tuned for readable white-on-red */
+  --primary-fg: #ffffff;
+  --accent: #ffe53b;
+  --accent-fg: #0a0a0a;
+  --secondary: #00c2ff;
+  --secondary-fg: #0a0a0a;
+  --danger: #d4002e;
+  --danger-fg: #ffffff;
+  --success: #006e4d;
+  --success-fg: #ffffff;
+  --shadow-color: #0a0a0a;
+  --ring: #d4002e;
+}
+
+html[data-theme='sharp'][data-mode='dark'] {
+  --bg: #0a0a0a;
+  --bg-tile: #171717;
+  --ink: #f5f5f5;
+  --ink-soft: #d4d4d4;
+  --muted: #a3a3a3;
+  --paper: #1f1f1f;
+  --primary: #ff1f4d;
+  --primary-fg: #0a0a0a;
+  --accent: #ffe53b;
+  --accent-fg: #0a0a0a;
+  --secondary: #00c2ff;
+  --secondary-fg: #0a0a0a;
+  --danger: #ff1f4d;
+  --danger-fg: #0a0a0a;
+  --success: #00d97e;
+  --success-fg: #0a0a0a;
+  --shadow-color: #000000;
+  --ring: #ffe53b;
+}
+
+/* ---------- COZY ---------- */
+
+html[data-theme='cozy'] {
+  --bg: #faf3e7;
+  --bg-tile: #fffaf0;
+  --ink: #2a2d44;               /* deeper slate for AA */
+  --ink-soft: #3d405b;
+  --muted: #5a5d75;             /* darker muted (was #8a8aa3) */
+  --paper: #fffaf0;
+  --primary: #5a8c75;           /* darker sage — cream on this 4.7:1 */
+  --primary-fg: #fffaf0;
+  --accent: #f2cc8f;
+  --accent-fg: #2a2d44;
+  --secondary: #b04a35;         /* deeper terracotta — cream on this 5.4:1 */
+  --secondary-fg: #fffaf0;
+  --danger: #b04a35;
+  --danger-fg: #fffaf0;
+  --success: #2d6a4f;           /* deepened — cream on this 6.2:1 */
+  --success-fg: #fffaf0;
+  --shadow-color: #2a2d44;
+  --ring: #b04a35;
+}
+
+html[data-theme='cozy'][data-mode='dark'] {
+  --bg: #232132;
+  --bg-tile: #2d2b40;
+  --ink: #faf3e7;
+  --ink-soft: #d8d3c4;
+  --muted: #9a96b0;
+  --paper: #34324b;
+  --primary: #a3d2bb;
+  --primary-fg: #232132;
+  --accent: #f2cc8f;
+  --accent-fg: #232132;
+  --secondary: #f0a48a;
+  --secondary-fg: #232132;
+  --danger: #f0a48a;
+  --danger-fg: #232132;
+  --success: #a3d2bb;
+  --success-fg: #232132;
+  --shadow-color: #000000;
+  --ring: #f2cc8f;
+}
+
+@theme {
+  --color-bg: var(--bg);
+  --color-bg-tile: var(--bg-tile);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-muted: var(--muted);
+  --color-paper: var(--paper);
+  --color-primary: var(--primary);
+  --color-primary-fg: var(--primary-fg);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-secondary: var(--secondary);
+  --color-secondary-fg: var(--secondary-fg);
+  --color-danger: var(--danger);
+  --color-danger-fg: var(--danger-fg);
+  --color-success: var(--success);
+  --color-success-fg: var(--success-fg);
+  --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* ---------- Base styles ---------- */
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(circle at 18px 18px, color-mix(in srgb, var(--shadow-color) 7%, transparent) 1.5px, transparent 1.6px);
+  background-size: 36px 36px;
+  color: var(--ink);
+  font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  font-weight: 500;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 220ms ease, color 220ms ease;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+/* ---------- Neobrutalist utilities ----------
+   These MUST live in @layer components so that Tailwind utility classes
+   (e.g. bg-[var(--primary)]) — which sit in the higher 'utilities' layer —
+   correctly override the default `background: var(--paper)` here. Without
+   the layer, the unlayered .bx-sm wins and every themed button renders
+   with the paper background instead of the brand color.
+------------------------------------------------- */
+
+@layer components {
+  .bx,
+  .bx-sm,
+  .bx-lg,
+  .bx-flat {
+    transition:
+      background-color 220ms ease,
+      color 220ms ease,
+      border-color 220ms ease,
+      box-shadow 220ms ease;
+  }
+
+  .bx {
+    border: var(--border-w) solid var(--ink);
+    border-radius: var(--radius);
+    background-color: var(--paper);
+    box-shadow: var(--shadow-x) var(--shadow-y) 0 0 var(--shadow-color);
+  }
+
+  .bx-sm {
+    border: var(--border-w) solid var(--ink);
+    border-radius: var(--radius-sm);
+    background-color: var(--paper);
+    box-shadow: var(--shadow-x-sm) var(--shadow-y-sm) 0 0 var(--shadow-color);
+  }
+
+  .bx-lg {
+    border: var(--border-w) solid var(--ink);
+    border-radius: var(--radius);
+    background-color: var(--paper);
+    box-shadow: var(--shadow-x-lg) var(--shadow-y-lg) 0 0 var(--shadow-color);
+  }
+
+  .bx-flat {
+    border: var(--border-w) solid var(--ink);
+    border-radius: var(--radius);
+    background-color: var(--paper);
+  }
+
+  .bx-press {
+    transition:
+      transform 120ms ease,
+      box-shadow 120ms ease,
+      background-color 220ms ease,
+      color 220ms ease;
+  }
+
+  .bx-press:hover:not(:disabled) {
+    transform: translate(-2px, -2px);
+    box-shadow: 7px 7px 0 0 var(--shadow-color);
+  }
+
+  .bx-press:active:not(:disabled) {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 0 var(--shadow-color);
+  }
+
+  .bx-press:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+/* Focus ring (brutalist style — solid + offset) */
+*:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Pop-tilt — used for emphasis blocks */
+.tilt-l {
+  transform: rotate(-1.5deg);
+}
+.tilt-r {
+  transform: rotate(1.5deg);
+}
+
+/* Scrollbars */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--ink);
+  border: 2px solid var(--paper);
+  border-radius: 999px;
+}
+
+/* Mobile: trim sizes to keep brutalist look without crowding */
+@media (max-width: 640px) {
+  :root {
+    --border-w: 2px;
+    --shadow-x: 4px;
+    --shadow-y: 4px;
+    --shadow-x-lg: 6px;
+    --shadow-y-lg: 6px;
+  }
+}
+
+/* Range input styling — brutalist */
+input[type='range'] {
+  -webkit-appearance: none;
+  width: 100%;
+  background: transparent;
+}
+input[type='range']::-webkit-slider-runnable-track {
+  height: 10px;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  background: var(--accent);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  margin-top: -7px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 0 var(--shadow-color);
+}
+input[type='range']::-moz-range-track {
+  height: 10px;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+}
+input[type='range']::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  background: var(--accent);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 0 var(--shadow-color);
+}
+
+@keyframes pop-in {
+  from {
+    transform: translateY(10px) rotate(-1deg);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) rotate(0);
+    opacity: 1;
+  }
+}
+.pop-in {
+  animation: pop-in 280ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* FontAwesome — let the React component handle sizing, keep vertical alignment clean */
+.svg-inline--fa {
+  vertical-align: -0.125em;
+}
