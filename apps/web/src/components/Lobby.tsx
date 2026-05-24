@@ -19,6 +19,7 @@ export default function Lobby() {
   const room = useGameStore((s) => s.room);
   const me = useGameStore(selectMe);
   const [copied, setCopied] = useState(false);
+  const [linkShared, setLinkShared] = useState(false);
   if (!room || !me) return null;
 
   const isHost = me.isHost;
@@ -47,13 +48,15 @@ export default function Lobby() {
     const url = `${window.location.origin}/room/${room!.roomId}`;
     if (navigator.share) {
       try {
-        await navigator.share({ title: 'Join my SketchStrike game', url });
+        await navigator.share({ title: 'SketchStrike', text: 'Join my SketchStrike game!', url });
       } catch {}
-    } else {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      return;
     }
+    try {
+      await navigator.clipboard.writeText(url);
+      setLinkShared(true);
+      setTimeout(() => setLinkShared(false), 1500);
+    } catch {}
   }
 
   return (
@@ -87,8 +90,8 @@ export default function Lobby() {
               <span>{copied ? 'Copied' : 'Copy code'}</span>
             </Button>
             <Button onClick={shareInvite} variant="ghost" size="sm">
-              <Icon name="share" />
-              <span>Share link</span>
+              <Icon name={linkShared ? 'check' : 'share'} />
+              <span>{linkShared ? 'Link copied!' : 'Share link'}</span>
             </Button>
           </div>
         </Card>

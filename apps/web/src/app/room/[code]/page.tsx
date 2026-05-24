@@ -1,16 +1,24 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { LIMITS } from '@sketchstrike/shared';
 import { useGameStore } from '@/store/gameStore';
 import { useSocketBindings } from '@/lib/bindSocket';
 import { getSocket } from '@/lib/socket';
-import { clearSession, loadSession, loadUsername, saveSession } from '@/lib/session';
+import {
+  clearSession,
+  loadSession,
+  loadUsername,
+  saveSession,
+  saveUsername,
+} from '@/lib/session';
 import Lobby from '@/components/Lobby';
 import GameScreen from '@/components/GameScreen';
 import Results from '@/components/Results';
 import Card, { CardLabel } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
 import Icon from '@/components/Icon';
 
 export default function RoomPage() {
@@ -29,36 +37,97 @@ export default function RoomPage() {
   const setIdentity = useGameStore((s) => s.setIdentity);
   const reset = useGameStore((s) => s.reset);
 
+  const [name, setName] = useState('');
+  const [needName, setNeedName] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
+
+  const join = useCallback(
+    (username: string) => {
+      const socket = getSocket();
+      const session = loadSession(roomCode);
+      setJoining(true);
+      socket.emit(
+        'join_room',
+        { roomId: roomCode, username, token: session?.token },
+        (res) => {
+          setJoining(false);
+          if (!res.ok) {
+            setJoinError(res.error);
+            clearSession();
+            return;
+          }
+          setIdentity({ playerId: res.data.playerId, token: res.data.token });
+          saveSession({ roomId: roomCode, playerId: res.data.playerId, token: res.data.token });
+        },
+      );
+    },
+    [roomCode, setIdentity, setJoinError, setJoining],
+  );
+
   useEffect(() => {
     if (!roomCode) return;
-    const socket = getSocket();
-    const username = loadUsername();
-    if (!username) {
-      router.replace('/');
-      return;
+    const existing = loadUsername();
+    if (existing) {
+      setName(existing);
+      join(existing);
+    } else {
+      // Arrived via a shared link without a saved name — ask for one in place
+      // rather than bouncing to the home page and losing the room code.
+      setNeedName(true);
     }
-    const session = loadSession(roomCode);
+    return () => reset();
+  }, [roomCode, join, reset]);
 
-    setJoining(true);
-    socket.emit(
-      'join_room',
-      { roomId: roomCode, username, token: session?.token },
-      (res) => {
-        setJoining(false);
-        if (!res.ok) {
-          setJoinError(res.error);
-          clearSession();
-          return;
-        }
-        setIdentity({ playerId: res.data.playerId, token: res.data.token });
-        saveSession({ roomId: roomCode, playerId: res.data.playerId, token: res.data.token });
-      },
+  function submitName(e: React.FormEvent) {
+    e.preventDefault();
+    const u = name.trim();
+    if (u.length < 2) return setNameError('Pick a name with at least 2 characters');
+    if (u.length > LIMITS.maxUsernameLength) {
+      return setNameError(`Max ${LIMITS.maxUsernameLength} characters`);
+    }
+    setNameError(null);
+    saveUsername(u);
+    setNeedName(false);
+    setJoinError(null);
+    join(u);
+  }
+
+  if (needName && !room) {
+    return (
+      <main className="min-h-screen grid place-items-center p-6">
+        <Card tone="paper" size="lg" className="w-full max-w-sm">
+          <div className="text-center">
+            <CardLabel>You&apos;re invited to</CardLabel>
+            <div className="font-mono font-black text-4xl tracking-[0.3em] mt-1 mb-5">
+              {roomCode}
+            </div>
+          </div>
+          <form onSubmit={submitName} className="space-y-4">
+            <Input
+              label="Your name"
+              value={name}
+              maxLength={LIMITS.maxUsernameLength}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="captain doodle"
+              autoComplete="off"
+              spellCheck={false}
+              autoFocus
+            />
+            <Button type="submit" variant="primary" size="lg" fullWidth disabled={joining}>
+              <Icon name="doorOpen" />
+              {joining ? 'Joining…' : 'Join game'}
+            </Button>
+            {nameError && (
+              <div className="bx-sm bg-[var(--danger)] text-[var(--danger-fg)] px-4 py-3 text-sm font-bold flex items-center gap-2">
+                <Icon name="warning" />
+                {nameError}
+              </div>
+            )}
+          </form>
+        </Card>
+      </main>
     );
-
-    return () => {
-      reset();
-    };
-  }, [roomCode, router, setIdentity, setJoinError, setJoining, reset]);
+  }
 
   if (joining && !room) {
     return (
