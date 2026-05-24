@@ -1,30 +1,34 @@
-# Render Blueprint for the SketchStrike realtime server (apps/server).
-# The Next.js web client deploys separately to Vercel — see README.
-#
-# To use: in the Render dashboard, New > Blueprint, point it at this repo.
-# Then set CORS_ORIGIN to your deployed web domain(s) before the first deploy.
 services:
   - type: web
-    name: sketchstrike-server
+    name: sketchstrike-server        # PROD
     runtime: node
-    plan: free # free spins down when idle (cold starts + drops live games); use "starter" to stay warm
-    branch: main # production tracks main; develop on dev and merge when ready
-    rootDir: . # repo root, so npm workspaces resolve
+    plan: free
+    branch: main
+    rootDir: .
     buildCommand: npm install --include=dev && npm run build --workspace=@sketchstrike/server
     startCommand: npm run start --workspace=@sketchstrike/server
     healthCheckPath: /health
-    autoDeploy: false # flip to true for push-to-deploy on main once you trust the pipeline
+    autoDeploy: false                # prod: deploy manually / on merge
     envVars:
-      - key: NODE_VERSION
-        value: "20"
-      # The deployed web origin(s). Comma-separate multiple (e.g. Vercel + custom domain).
-      # Left unset in the blueprint so you fill it in the dashboard.
-      - key: CORS_ORIGIN
-        sync: false
-      - key: MAX_ROOMS
-        value: "1000"
-      - key: MAX_CONNECTIONS_PER_IP
-        value: "30"
-      - key: ROOM_CREATE_PER_MIN
-        value: "12"
-      # PORT is provided by Render automatically and read via process.env.PORT.
+      - { key: NODE_VERSION, value: "20" }
+      - { key: CORS_ORIGIN, sync: false }   # set to prod Vercel URL
+      - { key: MAX_ROOMS, value: "1000" }
+      - { key: MAX_CONNECTIONS_PER_IP, value: "30" }
+      - { key: ROOM_CREATE_PER_MIN, value: "12" }
+
+  - type: web
+    name: sketchstrike-server-dev    # STAGING
+    runtime: node
+    plan: free
+    branch: dev
+    rootDir: .
+    buildCommand: npm install --include=dev && npm run build --workspace=@sketchstrike/server
+    startCommand: npm run start --workspace=@sketchstrike/server
+    healthCheckPath: /health
+    autoDeploy: true                 # dev: auto-deploy every push to dev
+    envVars:
+      - { key: NODE_VERSION, value: "20" }
+      - { key: CORS_ORIGIN, sync: false }   # set to dev Vercel preview URL
+      - { key: MAX_ROOMS, value: "1000" }
+      - { key: MAX_CONNECTIONS_PER_IP, value: "30" }
+      - { key: ROOM_CREATE_PER_MIN, value: "12" }
