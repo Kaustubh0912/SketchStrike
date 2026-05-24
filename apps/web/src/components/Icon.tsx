@@ -41,6 +41,9 @@ import {
   faUserSlash,
   faArrowRightFromBracket,
   faDoorOpen,
+  faDownload,
+  faArrowUpFromBracket,
+  faSquarePlus,
   type IconDefinition,
 } from '@fortawesome/free-solid-svg-icons';
 
@@ -84,6 +87,9 @@ const REGISTRY = {
   kick: faUserSlash,
   leave: faArrowRightFromBracket,
   doorOpen: faDoorOpen,
+  download: faDownload,
+  shareUp: faArrowUpFromBracket,
+  squarePlus: faSquarePlus,
 } satisfies Record<string, IconDefinition>;
 
 export type IconName = keyof typeof REGISTRY;

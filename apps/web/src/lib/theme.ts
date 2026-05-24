@@ -62,12 +62,26 @@ export function saveMode(name: ModeName) {
   window.localStorage.setItem(MODE_KEY, name);
 }
 
+// Keep the browser UI / PWA status-bar color (<meta name="theme-color">) in
+// sync with whatever the active theme + mode resolve to for --bg.
+function syncThemeColor() {
+  if (typeof document === 'undefined') return;
+  const bg = getComputedStyle(document.documentElement)
+    .getPropertyValue('--bg')
+    .trim();
+  if (!bg) return;
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', bg);
+}
+
 export function applyTheme(name: ThemeName) {
   if (typeof document === 'undefined') return;
   document.documentElement.setAttribute('data-theme', name);
+  syncThemeColor();
 }
 
 export function applyMode(name: ModeName) {
   if (typeof document === 'undefined') return;
   document.documentElement.setAttribute('data-mode', name);
+  syncThemeColor();
 }
