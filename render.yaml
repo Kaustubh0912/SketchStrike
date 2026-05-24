@@ -1,0 +1,30 @@
+# Render Blueprint for the SketchStrike realtime server (apps/server).
+# The Next.js web client deploys separately to Vercel — see README.
+#
+# To use: in the Render dashboard, New > Blueprint, point it at this repo.
+# Then set CORS_ORIGIN to your deployed web domain(s) before the first deploy.
+services:
+  - type: web
+    name: sketchstrike-server
+    runtime: node
+    plan: free # free spins down when idle (cold starts + drops live games); use "starter" to stay warm
+    branch: main # production tracks main; develop on dev and merge when ready
+    rootDir: . # repo root, so npm workspaces resolve
+    buildCommand: npm install --include=dev && npm run build --workspace=@sketchstrike/server
+    startCommand: npm run start --workspace=@sketchstrike/server
+    healthCheckPath: /health
+    autoDeploy: false # flip to true for push-to-deploy on main once you trust the pipeline
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      # The deployed web origin(s). Comma-separate multiple (e.g. Vercel + custom domain).
+      # Left unset in the blueprint so you fill it in the dashboard.
+      - key: CORS_ORIGIN
+        sync: false
+      - key: MAX_ROOMS
+        value: "1000"
+      - key: MAX_CONNECTIONS_PER_IP
+        value: "30"
+      - key: ROOM_CREATE_PER_MIN
+        value: "12"
+      # PORT is provided by Render automatically and read via process.env.PORT.

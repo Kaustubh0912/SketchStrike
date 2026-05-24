@@ -216,6 +216,10 @@ export class RoomManager {
 
   constructor(private readonly io: IoServer) {}
 
+  get roomCount(): number {
+    return this.rooms.size;
+  }
+
   createRoom(socket: IoSocket, username: string, settings: Partial<RoomSettings> | undefined) {
     const finalSettings = this.normalizeSettings({ ...DEFAULT_SETTINGS, ...settings });
     const placeholderId = 'pending';

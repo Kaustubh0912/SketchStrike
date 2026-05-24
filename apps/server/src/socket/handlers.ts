@@ -11,20 +11,54 @@ import type { Room, RoomManager } from '../game/RoomManager.js';
 import { scoreGuesser } from '../game/Scoring.js';
 import { newMessageId as newGuessMessageId } from '../utils/id.js';
 import { sanitizeChat, sanitizeCustomWords } from '../utils/normalize.js';
+import { clientIp, type RateLimiter } from '../utils/security.js';
 
 type IoServer = Server<ClientToServerEvents, ServerToClientEvents>;
 type IoSocket = Socket<ClientToServerEvents, ServerToClientEvents>;
 
-export function registerHandlers(io: IoServer, manager: RoomManager) {
+export interface HandlerGuards {
+  /** Per-IP limiter for room creation. */
+  roomCreateLimiter: RateLimiter;
+  /** Hard ceiling on concurrent rooms across the whole server. */
+  maxRooms: number;
+}
+
+/**
+ * Wraps an event handler so a thrown error is logged instead of bubbling up to
+ * `uncaughtException` — one bad payload must never take down every live game.
+ */
+function safe<A extends unknown[]>(
+  event: string,
+  fn: (...args: A) => void,
+): (...args: A) => void {
+  return (...args: A) => {
+    try {
+      fn(...args);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error(`[handler:${event}]`, err);
+    }
+  };
+}
+
+export function registerHandlers(io: IoServer, manager: RoomManager, guards: HandlerGuards) {
   io.on('connection', (socket: IoSocket) => {
-    socket.on('create_room', (payload, ack) => {
+    socket.on('create_room', safe('create_room', (payload, ack) => {
+      if (typeof ack !== 'function') return;
+      if (!guards.roomCreateLimiter.allow(clientIp(socket))) {
+        return ack({ ok: false, error: 'Creating rooms too quickly — wait a moment.' });
+      }
+      if (manager.roomCount >= guards.maxRooms) {
+        return ack({ ok: false, error: 'Server is at capacity. Please try again later.' });
+      }
       const username = cleanUsername(payload?.username);
       if (!username) return ack({ ok: false, error: 'Username required' });
       const { room, player } = manager.createRoom(socket, username, payload?.settings);
       ack({ ok: true, data: { roomId: room.id, playerId: player.id, token: player.token } });
-    });
+    }));
 
-    socket.on('join_room', (payload, ack) => {
+    socket.on('join_room', safe('join_room', (payload, ack) => {
+      if (typeof ack !== 'function') return;
       const username = cleanUsername(payload?.username);
       if (!username) return ack({ ok: false, error: 'Username required' });
       const result = manager.joinRoom(socket, payload.roomId, username, payload.token);
@@ -38,9 +72,9 @@ export function registerHandlers(io: IoServer, manager: RoomManager) {
       if (reconnected && room.currentWord && player.id === room.currentDrawerId) {
         socket.emit('drawer_word', { word: room.currentWord });
       }
-    });
+    }));
 
-    socket.on('leave_room', () => {
+    socket.on('leave_room', safe('leave_room', () => {
       const ctx = manager.getContext(socket.id);
       if (!ctx) return;
       const { room, player } = ctx;
@@ -53,9 +87,9 @@ export function registerHandlers(io: IoServer, manager: RoomManager) {
       } else {
         room.broadcastState();
       }
-    });
+    }));
 
-    socket.on('update_settings', (settings) => {
+    socket.on('update_settings', safe('update_settings', (settings) => {
       const ctx = manager.getContext(socket.id);
       if (!ctx) return;
       const { room, player } = ctx;
@@ -66,9 +100,9 @@ export function registerHandlers(io: IoServer, manager: RoomManager) {
         p.guessesRemaining = room.settings.guessesPerRound;
       }
       room.broadcastState();
-    });
+    }));
 
-    socket.on('kick_player', (payload) => {
+    socket.on('kick_player', safe('kick_player', (payload) => {
       const ctx = manager.getContext(socket.id);
       if (!ctx) return;
       const { room, player } = ctx;
@@ -82,73 +116,73 @@ export function registerHandlers(io: IoServer, manager: RoomManager) {
       room.systemMessage(`${target.username} was kicked`);
       room.removePlayer(target.id);
       room.broadcastState();
-    });
+    }));
 
-    socket.on('start_game', () => {
+    socket.on('start_game', safe('start_game', () => {
       const ctx = manager.getContext(socket.id);
       if (!ctx) return;
       const { room, player } = ctx;
       if (player.id !== room.hostId) return;
       if (room.status !== 'lobby' && room.status !== 'ended') return;
       room.loop.startGame();
-    });
+    }));
 
-    socket.on('choose_word', (payload) => {
+    socket.on('choose_word', safe('choose_word', (payload) => {
       const ctx = manager.getContext(socket.id);
       if (!ctx) return;
       const { room, player } = ctx;
       room.loop.chooseWord(player.id, payload.word);
-    });
+    }));
 
-    socket.on('drawing_data', (payload) => {
+    socket.on('drawing_data', safe('drawing_data', (payload) => {
       const ctx = manager.getContext(socket.id);
       if (!ctx) return;
       const { room, player } = ctx;
       if (room.status !== 'playing') return;
       if (player.id !== room.currentDrawerId) return;
-      const safe = sanitizeDrawEvent(payload);
-      if (!safe) return;
-      room.drawHistory.push(safe);
+      const safeEvent = sanitizeDrawEvent(payload);
+      if (!safeEvent) return;
+      room.drawHistory.push(safeEvent);
       if (room.drawHistory.length > 5000) room.drawHistory.shift();
-      socket.to(room.id).emit('canvas_event', safe);
-    });
+      socket.to(room.id).emit('canvas_event', safeEvent);
+    }));
 
-    socket.on('clear_canvas', () => {
+    socket.on('clear_canvas', safe('clear_canvas', () => {
       const ctx = manager.getContext(socket.id);
       if (!ctx) return;
       const { room, player } = ctx;
       if (player.id !== room.currentDrawerId) return;
       room.drawHistory = [];
       io.to(room.id).emit('canvas_cleared');
-    });
+    }));
 
-    socket.on('undo_canvas', () => {
+    socket.on('undo_canvas', safe('undo_canvas', () => {
       const ctx = manager.getContext(socket.id);
       if (!ctx) return;
       const { room, player } = ctx;
       if (player.id !== room.currentDrawerId) return;
       room.drawHistory.pop();
       io.to(room.id).emit('canvas_replay', { events: room.drawHistory });
-    });
+    }));
 
-    socket.on('submit_guess', (payload) => {
+    socket.on('submit_guess', safe('submit_guess', (payload) => {
       const ctx = manager.getContext(socket.id);
       if (!ctx) return;
       handleGuess(io, ctx.room, ctx.player.id, payload?.text ?? '');
-    });
+    }));
 
-    socket.on('request_rematch', () => {
+    socket.on('request_rematch', safe('request_rematch', () => {
       const ctx = manager.getContext(socket.id);
       if (!ctx) return;
       const { room, player } = ctx;
       if (player.id !== room.hostId) return;
       if (room.status !== 'ended') return;
       room.loop.startGame();
-    });
+    }));
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', safe('disconnect', () => {
       manager.handleDisconnect(socket.id);
-    });
+    }));
   });
 }
 

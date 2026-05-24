@@ -66,6 +66,16 @@ Then open <http://localhost:3000>, create a room, share the 5-character code, an
 
 Deploy the Next.js frontend to Vercel if you like, but run `apps/server` on an always-on Node host that supports persistent WebSocket connections, such as Railway, Render, Fly.io, a VPS, or a container service. Vercel Functions cannot act as the Socket.IO server for this app because rooms, timers, reconnect windows, and drawing events live in server memory over a long-lived connection.
 
+A ready-to-use **Render Blueprint** ships at [`render.yaml`](./render.yaml): in Render, choose **New → Blueprint**, point it at this repo, and set `CORS_ORIGIN` to your deployed web domain before the first deploy. It tracks the `main` branch, runs a `/health` check, and pre-wires the abuse-limit env vars below. Note the `free` plan spins down when idle (cold starts drop any in-progress games) — use `starter` to stay warm.
+
+The server reads these optional env vars (sensible defaults shown in `apps/server/.env.example`):
+
+```bash
+MAX_ROOMS=1000               # concurrent-room ceiling before create_room is refused
+MAX_CONNECTIONS_PER_IP=30    # simultaneous sockets per client IP
+ROOM_CREATE_PER_MIN=12       # rooms one IP may create per minute
+```
+
 Set the production frontend environment variable to the deployed server URL:
 
 ```bash
@@ -153,12 +163,21 @@ Icons are committed under `apps/web/public/icons` (plus `src/app/icon.svg` and
 npm run gen:icons --workspace=@sketchstrike/web
 ```
 
+## Production hardening (done)
+
+These shipped to make the single-process, no-accounts deployment safe on a public URL:
+
+- **Crash isolation** — every socket handler is wrapped so a bad payload is logged, not fatal, plus last-resort `uncaughtException` / `unhandledRejection` guards. One error no longer drops every live game.
+- **Abuse limits** — per-IP connection cap, a global concurrent-room ceiling, and a per-IP room-creation rate limit (guess spam was already throttled).
+- **Graceful shutdown** — `SIGTERM` / `SIGINT` drain sockets and close the server cleanly on deploy/restart.
+- **Deploy config** — `render.yaml` Blueprint for the server; Vercel for the web client.
+
 ## Deferred (follow-up passes)
 
-- Persistence: Prisma + Postgres for users, stats, match history.
+- Persistence: Prisma + Postgres for users, stats, match history. *(Not planned — this build is intentionally accountless.)*
 - Redis adapter for Socket.IO so we can horizontally scale the server.
-- JWT auth + optional accounts (guest play already works via local-storage tokens).
-- Docker / CI / deployment configs.
+- JWT auth + optional accounts (guest play already works via local-storage tokens). *(Not planned — see above.)*
+- CI pipeline.
 - Sound effects, deeper Framer Motion polish.
 - Vitest unit + Playwright integration tests.
 - Profanity filter, AI moderation.
